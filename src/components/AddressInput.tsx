@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Satellite, Plus, Minus } from 'lucide-react';
+import { Satellite, Plus, Minus, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface AddressInputProps {
   value?: string;
@@ -7,6 +7,7 @@ interface AddressInputProps {
   onSearch?: () => void;
   zoomLevel?: number;
   onZoomChange?: (level: number) => void;
+  onPanChange?: (direction: 'up' | 'down' | 'left' | 'right') => void;
 }
 
 export const AddressInput: React.FC<AddressInputProps> = ({
@@ -14,7 +15,8 @@ export const AddressInput: React.FC<AddressInputProps> = ({
   onAddressSelect,
   onSearch,
   zoomLevel = 18,
-  onZoomChange
+  onZoomChange,
+  onPanChange
 }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   
@@ -98,25 +100,67 @@ export const AddressInput: React.FC<AddressInputProps> = ({
       {/* 줌 레벨 컨트롤 */}
       {onZoomChange && (
         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-          <span className="text-sm font-medium text-gray-700">위성사진 줌 레벨</span>
+          <span className="text-sm font-medium text-gray-800">위성사진 줌 레벨</span>
           <div className="flex items-center gap-3">
             <button
               onClick={handleZoomOut}
               disabled={zoomLevel <= 15}
-              className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-800"
             >
-              <Minus className="w-4 h-4" />
+              <Minus className="w-4 h-4 text-gray-800" />
             </button>
-            <span className="text-sm font-mono bg-white px-3 py-1 rounded border min-w-[3rem] text-center">
+            <span className="text-sm font-mono bg-white px-3 py-1 rounded border min-w-[3rem] text-center text-gray-800 font-bold">
               {zoomLevel}
             </span>
             <button
               onClick={handleZoomIn}
               disabled={zoomLevel >= 21}
-              className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-800"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 text-gray-800" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 지도 이동 컨트롤 */}
+      {onPanChange && (
+        <div className="flex flex-col items-center p-3 bg-gray-50 rounded-lg">
+          <div className="text-sm font-medium text-gray-800 mb-3">지도 이동</div>
+          <div className="grid grid-cols-3 gap-1">
+            <div></div>
+            <button
+              onClick={() => onPanChange('up')}
+              className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              <ChevronUp className="w-5 h-5" />
+            </button>
+            <div></div>
+            
+            <button
+              onClick={() => onPanChange('left')}
+              className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="w-10 h-10 flex items-center justify-center bg-gray-200 rounded-lg">
+              <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+            </div>
+            <button
+              onClick={() => onPanChange('right')}
+              className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+            
+            <div></div>
+            <button
+              onClick={() => onPanChange('down')}
+              className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              <ChevronDown className="w-5 h-5" />
+            </button>
+            <div></div>
           </div>
         </div>
       )}

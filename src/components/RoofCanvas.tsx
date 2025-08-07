@@ -73,17 +73,25 @@ const RoofCanvas: React.FC<RoofCanvasProps> = ({
     ctx.lineWidth = 2;
 
     roofPoints.forEach((point: Point, index: number) => {
+      // 첫 번째 점은 빨간색으로 표시
+      if (index === 0) {
+        ctx.fillStyle = '#ef4444';
+        ctx.strokeStyle = '#dc2626';
+      } else {
+        ctx.fillStyle = '#3b82f6';
+        ctx.strokeStyle = '#1d4ed8';
+      }
+      
       ctx.beginPath();
-      ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+      ctx.arc(point.x, point.y, 6, 0, 2 * Math.PI);
       ctx.fill();
       ctx.stroke();
 
       // 점 번호 표시
       ctx.fillStyle = '#ffffff';
-      ctx.font = '12px Arial';
+      ctx.font = 'bold 12px Arial';
       ctx.textAlign = 'center';
       ctx.fillText((index + 1).toString(), point.x, point.y + 4);
-      ctx.fillStyle = '#3b82f6';
     });
 
     // 선 그리기
@@ -159,27 +167,50 @@ const RoofCanvas: React.FC<RoofCanvasProps> = ({
 
   return (
     <div className="mb-6">
+      <div className="text-sm text-gray-600 mb-2 font-medium">
+        🎯 지붕 윤곽 그리기 캔버스 (위성사진 아래)
+      </div>
       <canvas
         ref={canvasRef}
         onClick={handleCanvasClick}
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setShowMouseCoords(true)}
         onMouseLeave={() => setShowMouseCoords(false)}
-        className="w-full border-2 border-blue-400 rounded-lg cursor-crosshair bg-gray-50 hover:border-blue-600 hover:shadow-lg transition-all"
-        style={{ maxHeight: '400px' }}
+        className="w-full border-2 border-blue-400 rounded-lg cursor-crosshair bg-white hover:border-blue-600 hover:shadow-lg transition-all relative z-10"
+        style={{ maxHeight: '400px', pointerEvents: 'auto' }}
       />
       
       {/* 마우스 좌표 표시 */}
       {showMouseCoords && (
-        <div className="mt-2 p-2 bg-gray-100 rounded text-center text-sm text-gray-600">
-          마우스 위치: X: {mousePos.x}, Y: {mousePos.y}
+        <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-center text-sm text-blue-800">
+          📍 마우스 위치: X: {mousePos.x}, Y: {mousePos.y}
           {roofPoints.length >= 3 && !isComplete && (
-            <span className="ml-4 text-blue-600">
-              첫 번째 점을 클릭하여 지붕 완성
+            <span className="ml-4 text-red-600 font-medium">
+              🔴 첫 번째 점을 클릭하여 지붕 완성
             </span>
           )}
         </div>
       )}
+      
+      {/* 진행 상황 표시 */}
+      <div className="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-700">
+        {roofPoints.length === 0 && (
+          <span>🎯 첫 번째 점을 클릭하여 지붕 그리기를 시작하세요</span>
+        )}
+        {roofPoints.length > 0 && roofPoints.length < 3 && (
+          <span>📐 현재 {roofPoints.length}개 점 설정됨 (최소 3개 필요)</span>
+        )}
+        {roofPoints.length >= 3 && !isComplete && (
+          <span>✅ {roofPoints.length}개 점 설정됨 - 첫 번째 점(빨간색)을 클릭하여 완성하세요</span>
+        )}
+        {isComplete && (
+          <span>🏁 지붕 윤곽 완성! 면적: {((roofPoints.length > 0 ? 
+            Math.abs(roofPoints.reduce((sum, point, i) => {
+              const next = roofPoints[(i + 1) % roofPoints.length];
+              return sum + (point.x * next.y - next.x * point.y);
+            }, 0)) / 2 * 0.0025 : 0)).toFixed(1)}㎡</span>
+        )}
+      </div>
     </div>
   );
 };

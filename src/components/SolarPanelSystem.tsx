@@ -70,6 +70,7 @@ const SolarPanelSystem = () => {
   const [isRoofComplete, setIsRoofComplete] = useState(false);
   const [instructionText, setInstructionText] = useState('🏠 <strong>주소를 입력</strong>하여 위성사진을 불러오세요.');
   const [zoomLevel, setZoomLevel] = useState(19);
+  const [mapCenter, setMapCenter] = useState({ lat: 0, lng: 0 });
 
   // 패널 설정
   const [panelWidth, setPanelWidth] = useState(2);
@@ -127,6 +128,7 @@ const SolarPanelSystem = () => {
     
     if (localLocation) {
       setCurrentLocation(localLocation);
+      setMapCenter({ lat: localLocation.lat, lng: localLocation.lng });
       console.log('로컬 데이터베이스에서 주소 찾음:', localLocation);
       return;
     }
@@ -146,6 +148,7 @@ const SolarPanelSystem = () => {
           lng: data.lng
         };
         setCurrentLocation(newLocation);
+        setMapCenter({ lat: newLocation.lat, lng: newLocation.lng });
         console.log('Google API에서 주소 찾음:', newLocation);
         setInstructionText('✅ 주소가 설정되었습니다! 위성사진 로드 버튼을 클릭하세요.');
       } else {
@@ -161,11 +164,14 @@ const SolarPanelSystem = () => {
   };
 
   // 위성 이미지 로드
-  const loadSatelliteImage = async (location: Location, zoom: number) => {
-    console.log('API 호출 시작:', { lat: location.lat, lng: location.lng, zoom });
+  const loadSatelliteImage = async (location: Location, zoom: number, centerLat?: number, centerLng?: number) => {
+    const lat = centerLat || location.lat;
+    const lng = centerLng || location.lng;
+    
+    console.log('API 호출 시작:', { lat, lng, zoom });
     
     try {
-      const apiUrl = `/api/satellite?lat=${location.lat}&lng=${location.lng}&zoom=${zoom}&size=600x400`;
+      const apiUrl = `/api/satellite?lat=${lat}&lng=${lng}&zoom=${zoom}&size=600x400`;
       console.log('API URL:', apiUrl);
       
       const response = await fetch(apiUrl);
@@ -199,9 +205,36 @@ const SolarPanelSystem = () => {
   // 줌 변경 시 자동으로 위성 이미지 새로고침
   useEffect(() => {
     if (currentLocation) {
-      loadSatelliteImage(currentLocation, zoomLevel);
+      loadSatelliteImage(currentLocation, zoomLevel, mapCenter.lat, mapCenter.lng);
     }
-  }, [zoomLevel]);
+  }, [zoomLevel, mapCenter]);
+
+  // 지도 이동 핸들러
+  const handlePanChange = (direction: 'up' | 'down' | 'left' | 'right') => {
+    if (!currentLocation) return;
+    
+    const panDistance = 0.002; // 이동 거리 (위도/경도 단위)
+    
+    let newLat = mapCenter.lat;
+    let newLng = mapCenter.lng;
+    
+    switch (direction) {
+      case 'up':
+        newLat += panDistance;
+        break;
+      case 'down':
+        newLat -= panDistance;
+        break;
+      case 'left':
+        newLng -= panDistance;
+        break;
+      case 'right':
+        newLng += panDistance;
+        break;
+    }
+    
+    setMapCenter({ lat: newLat, lng: newLng });
+  };
 
   // 지붕 클릭 핸들러
   const handleRoofClick = (point: Point) => {
@@ -362,6 +395,7 @@ ${roofPoints.map((point) => `    '(${point.x.toFixed(1)} ${point.y.toFixed(1)})`
     setIsRoofComplete(false);
     setInstructionText('🏠 <strong>주소를 입력</strong>하여 위성사진을 불러오세요.');
     setZoomLevel(19);
+    setMapCenter({ lat: 0, lng: 0 });
     setRoofArea(0);
     setPanelCount(0);
     setTotalCapacity(0);
@@ -409,6 +443,7 @@ ${roofPoints.map((point) => `    '(${point.x.toFixed(1)} ${point.y.toFixed(1)})`
                       onSearch={handleLoadSatellite}
                       zoomLevel={zoomLevel}
                       onZoomChange={handleZoomChange}
+                      onPanChange={handlePanChange}
                     />
                   </div>
                 </div>
@@ -469,7 +504,11 @@ ${roofPoints.map((point) => `    '(${point.x.toFixed(1)} ${point.y.toFixed(1)})`
                     
                     {satelliteImageUrl ? (
                       <div className="space-y-4">
-                        <SatelliteImageViewer imageUrl={satelliteImageUrl} />
+                        <SatelliteImageViewer 
+                          imageUrl={satelliteImageUrl} 
+                          showMarker={true}
+                          markerPosition={{ x: 50, y: 50 }}
+                        />
                         <RoofCanvas
                           onRoofClick={handleRoofClick}
                           roofPoints={roofPoints}
